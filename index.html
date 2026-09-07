@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="description" content="Великий таймер зворотного відліку до виходу WARDOGS у Steam Early Access — 10 вересня 2026.">
 <meta name="theme-color" content="#0C0B0A">
-<meta name="build" content="2026-09-07d">
+<meta name="build" content="2026-09-07e">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="canonical" href="https://elgias.github.io/wardogs-countdown/">
 <meta property="og:type" content="website">
@@ -231,6 +231,10 @@ body.launched .aim{opacity:.45}
 .foot a:hover{color:var(--f1);border-color:var(--f1)}
 .foot a:focus-visible{outline:2px solid var(--f2);outline-offset:3px}
 .flag{color:var(--dust)}
+/* Printed on the page, not fetched: a privacy browser can block a scripted
+   fetch of the page's own HTML, so a stamp the reader can simply LOOK at is
+   the only version check that always works. */
+.build{font-family:var(--mono);font-size:10.5px;letter-spacing:.04em;opacity:.5}
 
 body.critical{--f1:var(--f3)}
 
@@ -304,6 +308,7 @@ body.critical{--f1:var(--f3)}
 
   <footer class="foot">
     <span class="flag">Час розблокування може змінитися &mdash; звіряйтеся зі Steam</span>
+    <span class="build">версія 2026-09-07e</span>
     <span>Джерела:
       <a href="https://store.steampowered.com/app/1867240/WARDOGS/" target="_blank" rel="noopener noreferrer">Steam</a>
       <a href="https://game8.co/articles/release-dates/wardogs-release-date-and-time" target="_blank" rel="noopener noreferrer">Game8</a>

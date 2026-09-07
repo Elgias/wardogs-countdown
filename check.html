@@ -33,7 +33,7 @@
   table{width:100%;border-collapse:collapse;margin:0 0 26px}
   th,td{text-align:left;padding:7px 10px;border-bottom:1px solid var(--line);vertical-align:top}
   th{color:var(--dust);font-weight:400;font-size:12px;letter-spacing:.1em;text-transform:uppercase}
-  td.v{white-space:nowrap}
+  td.v{word-break:break-word}
   .ok{color:var(--ok)} .bad{color:var(--bad)} .warn{color:var(--warn)}
   .sample{border:1px solid var(--line);background:var(--plate);padding:14px 18px;margin:0 0 12px}
   .sample .lbl{font-size:11px;color:var(--dust);letter-spacing:.16em;text-transform:uppercase}
@@ -78,6 +78,7 @@
 (function () {
   "use strict";
 
+  var BUILD = "2026-09-07e";
   var rows = document.getElementById("rows");
   function row(label, value, cls) {
     var tr = document.createElement("tr");
@@ -134,8 +135,11 @@
     var v = document.getElementById("verdict");
     if (antonReal) {
       v.className = "verdict ok";
-      v.innerHTML = "<b>Шрифти працюють</b><span>Браузер завантажив і застосував шрифти сайту. " +
-        "Якщо головна сторінка виглядає інакше — це її кеш, натисніть Ctrl+Shift+R на ній.</span>";
+      v.innerHTML = "<b>Шрифти працюють</b><span>Браузер завантажив і застосував шрифти сайту &mdash; " +
+        "ширина рядка в Anton не збігається з Impact, отже малює саме Anton.<br><br>" +
+        "Якщо головна сторінка все одно виглядає інакше, це її кеш. Відкрийте головну і " +
+        "подивіться внизу праворуч: там написана версія. Має бути <b style='display:inline;font-size:inherit'>" +
+        BUILD + "</b>. Якщо число інше — натисніть на ній Ctrl+Shift+R.</span>";
     } else {
       v.className = "verdict bad";
       v.innerHTML = "<b>Браузер не застосовує шрифти сайту</b><span>Файли або не доходять, " +
@@ -144,29 +148,38 @@
     }
   }
 
-  /* Can the font file itself even be fetched? Separates "blocked at the
-     network" from "fetched but not applied to text". */
+  row("Версія цієї сторінки", BUILD, "ok");
+
+  /* A scripted fetch is a WEAKER signal than it looks: a privacy browser can
+     block fetch() while the browser's own CSS font loading works perfectly.
+     Seen in Zen 2026-09-07 — NetworkError here, yet Anton rendered. So these
+     two probes are extra detail, and neither one can fail the verdict. */
   fetch("fonts/anton-400-latin.woff2", { cache: "no-store" })
     .then(function (r) {
       return r.arrayBuffer().then(function (b) {
-        row("Файл шрифту завантажується", r.status + " · " + b.byteLength + " байт",
-            r.ok && b.byteLength > 1000 ? "ok" : "bad");
+        row("Файл шрифту качається скриптом", r.status + " · " + b.byteLength + " байт",
+            r.ok && b.byteLength > 1000 ? "ok" : "warn");
       });
     })
     .catch(function (e) {
-      row("Файл шрифту завантажується", "ЗАБЛОКОВАНО (" + e.message + ")", "bad");
+      row("Файл шрифту качається скриптом",
+          "блокує браузер (" + e.message + ") — на шрифти це не впливає", "warn");
     })
     .then(function () {
       return fetch("index.html", { cache: "no-store" }).then(function (r) { return r.text(); });
     })
     .then(function (html) {
       var m = html.match(/name="build" content="([^"]+)"/);
-      row("Версія головної сторінки", m ? m[1] : "мітки немає — стара версія",
-          m ? "ok" : "warn");
-      row("Головна тягне Google Fonts", html.indexOf("fonts.googleapis") >= 0 ? "ТАК — стара версія" : "НІ",
+      row("Версія головної сторінки", m ? m[1] : "мітки немає — стара версія", m ? "ok" : "warn");
+      row("Головна тягне Google Fonts",
+          html.indexOf("fonts.googleapis") >= 0 ? "ТАК — стара версія" : "НІ",
           html.indexOf("fonts.googleapis") >= 0 ? "bad" : "ok");
     })
-    .catch(function () {})
+    .catch(function (e) {
+      /* Report it instead of swallowing it — a silently missing row is what
+         hid this the first time round. */
+      row("Версію головної не прочитати", "блокує браузер (" + e.message + ")", "warn");
+    })
     .then(function () {
       return document.fonts.ready.catch(function () {});
     })
