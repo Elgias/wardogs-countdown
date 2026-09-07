@@ -1,0 +1,5 @@
+# Never let autocrlf touch binaries — a single CRLF conversion corrupts a font
+# or an image in a way that only shows up in the browser, not in git status.
+*.woff2 -text
+*.png   -text
+*.svg   text eol=lf

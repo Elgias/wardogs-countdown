@@ -12,19 +12,19 @@
 <meta property="og:locale" content="uk_UA">
 <meta property="og:url" content="https://elgias.github.io/wardogs-countdown/">
 <meta property="og:title" content="Відлік до Wardogs">
-<meta property="og:description" content="Скільки лишилось до виходу WARDOGS у Steam Early Access — 10 вересня 2026.">
+<meta property="og:description" content="Скільки лишилось до виходу WARDOGS у Steam Early Access — 10 вересня 2026, 17:00 UTC.">
 <meta property="og:image" content="https://elgias.github.io/wardogs-countdown/og.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta property="og:image:alt" content="Таймер зворотного відліку до релізу Wardogs">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Відлік до Wardogs">
-<meta name="twitter:description" content="Скільки лишилось до виходу WARDOGS у Steam Early Access — 10 вересня 2026.">
+<meta name="twitter:description" content="Скільки лишилось до виходу WARDOGS у Steam Early Access — 10 вересня 2026, 17:00 UTC.">
 <meta name="twitter:image" content="https://elgias.github.io/wardogs-countdown/og.png">
 <title>Відлік до Wardogs</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="fonts.css">
+<link rel="preload" as="font" type="font/woff2" href="fonts/anton-400-latin.woff2" crossorigin>
+<link rel="preload" as="font" type="font/woff2" href="fonts/plexsans-400-600-cyrillic.woff2" crossorigin>
 
 <style>
 :root{
@@ -181,24 +181,20 @@ body.impact .board{animation:impact .3s steps(4,end);border-color:var(--f1)}
 body.beat .sep i{opacity:1}
 
 /* ---------- target + unlock toggle ---------- */
-.aim{display:flex;align-items:center;justify-content:center;gap:16px;flex-wrap:wrap;
-  font-size:13px;letter-spacing:.01em;color:var(--dust)}
-.aim b{font-family:var(--mono);color:var(--bone);font-weight:500;letter-spacing:.01em}
-.tgl{display:flex;border:1px solid var(--line)}
-.tgl button{
-  background:none;border:0;border-right:1px solid var(--line);font-family:var(--sans);
-  color:var(--dust);padding:7px 13px;font-size:11.5px;letter-spacing:.03em;
-  cursor:pointer;transition:color .2s ease,background .2s ease;
+.aim{
+  margin:0;display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;
+  font-size:13px;letter-spacing:.01em;color:var(--dust);
 }
-.tgl button:last-child{border-right:0}
-.tgl button[aria-pressed="true"]{background:var(--f1);color:#0F0C06;font-weight:600}
-.tgl button:hover{color:var(--bone)}
-.tgl button[aria-pressed="true"]:hover{color:#0F0C06}
-.tgl button:focus-visible{outline:2px solid var(--f2);outline-offset:2px}
+.aim b{font-family:var(--mono);color:var(--bone);font-weight:500;letter-spacing:.01em}
+.aim .local{
+  font-family:var(--mono);font-size:12px;color:var(--dust);
+  border-left:1px solid var(--line);padding-left:12px;
+}
+.aim .local:empty{display:none}
 
 .launch-note{display:none;margin:0;font-size:13px;font-weight:500;letter-spacing:.17em;text-transform:uppercase;color:var(--f1)}
 body.launched .launch-note{display:block}
-body.launched .aim{display:none}
+body.launched .aim{opacity:.45}
 
 /* ---------- deployment window ---------- */
 .cap{display:flex;flex-direction:column;gap:9px;font-size:11.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--dust)}
@@ -230,7 +226,7 @@ body.launched .aim{display:none}
 .foot a{color:var(--dust);text-decoration:none;border-bottom:1px solid var(--line);padding-bottom:2px;margin-left:9px}
 .foot a:hover{color:var(--f1);border-color:var(--f1)}
 .foot a:focus-visible{outline:2px solid var(--f2);outline-offset:3px}
-.flag{color:var(--f3)}
+.flag{color:var(--dust)}
 
 body.critical{--f1:var(--f3)}
 
@@ -293,13 +289,7 @@ body.critical{--f1:var(--f3)}
 
     <p class="launch-note">Зону захоплено &middot; Wardogs у ранньому доступі</p>
 
-    <div class="aim">
-      <span>Ціль <b id="targetLabel">10 вересня 2026</b></span>
-      <div class="tgl" role="group" aria-label="Час розблокування">
-        <button type="button" id="t16" aria-pressed="true">16:00 UTC &middot; за ЗМІ</button>
-        <button type="button" id="t00" aria-pressed="false">00:00 UTC</button>
-      </div>
-    </div>
+    <p class="aim">Ціль <b>10 вересня 2026 &middot; 17:00 UTC</b> <span class="local" id="aimLocal"></span></p>
   </section>
 
   <section class="cap" aria-label="Вікно розгортання">
@@ -309,7 +299,7 @@ body.critical{--f1:var(--f3)}
   </section>
 
   <footer class="foot">
-    <span class="flag">Точний час розблокування офіційно не підтверджено</span>
+    <span class="flag">Час розблокування може змінитися &mdash; звіряйтеся зі Steam</span>
     <span>Джерела:
       <a href="https://store.steampowered.com/app/1867240/WARDOGS/" target="_blank" rel="noopener noreferrer">Steam</a>
       <a href="https://game8.co/articles/release-dates/wardogs-release-date-and-time" target="_blank" rel="noopener noreferrer">Game8</a>
@@ -323,13 +313,10 @@ body.critical{--f1:var(--f3)}
   "use strict";
   var REDUCED = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-  var TARGETS = {
-    t16: { at: Date.UTC(2026, 8, 10, 16, 0, 0), label: "10 вересня 2026 · 16:00 UTC" },
-    t00: { at: Date.UTC(2026, 8, 10,  0, 0, 0), label: "10 вересня 2026 · 00:00 UTC" }
-  };
+  /* Release: 10 September 2026, 17:00 UTC. Month is 0-based, so 8 = September. */
+  var TARGET = Date.UTC(2026, 8, 10, 17, 0, 0);
   var WINDOW_START = Date.UTC(2026, 8, 3, 0, 0, 0);
   var DAY = 86400000;
-  var key = "t16";
 
   /* ---- split-flap cards ---- */
   function build(el, len){
@@ -413,18 +400,32 @@ body.critical{--f1:var(--f3)}
   objEl.innerHTML = "<span>10 &middot; OBJ</span>";
   daysWrap.appendChild(objEl);
 
-  var elTarget = document.getElementById("targetLabel");
-  var elPct    = document.getElementById("capPct");
-  var elNote   = document.getElementById("capNote");
-  var elUtc    = document.getElementById("utc");
-  var elLoc    = document.getElementById("loc");
-  var elTz     = document.getElementById("tzname");
-  var btn16    = document.getElementById("t16");
-  var btn00    = document.getElementById("t00");
+  var elPct   = document.getElementById("capPct");
+  var elNote  = document.getElementById("capNote");
+  var elUtc   = document.getElementById("utc");
+  var elLoc   = document.getElementById("loc");
+  var elTz    = document.getElementById("tzname");
+  var elAimLo = document.getElementById("aimLocal");
 
+  var tzShort = "";
   try {
     var tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
-    if (tz) elTz.textContent = tz.split("/").pop().replace(/_/g, " ");
+    if (tz) {
+      tzShort = tz.split("/").pop().replace(/_/g, " ");
+      elTz.textContent = tzShort;
+    }
+  } catch (e) {}
+
+  /* Same instant in the viewer's own zone — the reason the unlock-time
+     toggle is no longer needed. Skipped when we are already on UTC. */
+  try {
+    var offMin = new Date(TARGET).getTimezoneOffset();
+    if (offMin !== 0) {
+      var local = new Intl.DateTimeFormat("uk-UA", {
+        day: "numeric", month: "long", hour: "2-digit", minute: "2-digit"
+      }).format(new Date(TARGET));
+      elAimLo.textContent = local + (tzShort ? " · " + tzShort : " за вашим часом");
+    }
   } catch (e) {}
 
   function pad(n, w){
@@ -438,7 +439,7 @@ body.critical{--f1:var(--f3)}
 
   function render(){
     var now = Date.now();
-    var target = TARGETS[key].at;
+    var target = TARGET;
     var left = target - now;
     var launched = left <= 0;
     if (launched) left = 0;
@@ -495,18 +496,6 @@ body.critical{--f1:var(--f3)}
 
     requestAnimationFrame(render);
   }
-
-  function select(k){
-    key = k;
-    lastSec = null;
-    lastMin = null;
-    elTarget.textContent = TARGETS[k].label;
-    btn16.setAttribute("aria-pressed", String(k === "t16"));
-    btn00.setAttribute("aria-pressed", String(k === "t00"));
-  }
-  btn16.addEventListener("click", function(){ select("t16"); });
-  btn00.addEventListener("click", function(){ select("t00"); });
-  select("t16");
 
   render();
 
