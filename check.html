@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="uk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Перевірка шрифтів</title>
+<link rel="stylesheet" href="fonts.css">
+<style>
+  :root{
+    color-scheme: dark;
+    --ground:#0C0B0A; --plate:#14120E; --line:#332E25;
+    --bone:#EDE8DA; --dust:#A29A88;
+    --ok:#7FB069; --bad:#C9553A; --warn:#E9A227;
+    --mono:"IBM Plex Mono",ui-monospace,Consolas,"Courier New",monospace;
+  }
+  body{
+    margin:0;padding:28px 22px 60px;background:var(--ground);color:var(--bone);
+    font-family:var(--mono);font-size:14px;line-height:1.6;
+  }
+  .wrap{max-width:760px;margin:0 auto}
+  h1{font-size:17px;letter-spacing:.1em;text-transform:uppercase;margin:0 0 4px}
+  .lede{color:var(--dust);margin:0 0 26px;font-size:13px}
+  .verdict{
+    border:2px solid var(--line);padding:16px 18px;margin:0 0 26px;
+    font-size:16px;line-height:1.5;
+  }
+  .verdict.ok{border-color:var(--ok)}
+  .verdict.bad{border-color:var(--bad)}
+  .verdict b{display:block;font-size:19px;margin-bottom:6px;letter-spacing:.04em}
+  .verdict.ok b{color:var(--ok)}
+  .verdict.bad b{color:var(--bad)}
+  table{width:100%;border-collapse:collapse;margin:0 0 26px}
+  th,td{text-align:left;padding:7px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+  th{color:var(--dust);font-weight:400;font-size:12px;letter-spacing:.1em;text-transform:uppercase}
+  td.v{white-space:nowrap}
+  .ok{color:var(--ok)} .bad{color:var(--bad)} .warn{color:var(--warn)}
+  .sample{border:1px solid var(--line);background:var(--plate);padding:14px 18px;margin:0 0 12px}
+  .sample .lbl{font-size:11px;color:var(--dust);letter-spacing:.16em;text-transform:uppercase}
+  .sample .txt{font-size:54px;line-height:1.1}
+  .anton{font-family:"Anton",Impact,sans-serif}
+  .forced{font-family:Impact,sans-serif}
+  .plex{font-family:"IBM Plex Sans","Segoe UI",sans-serif;font-size:24px}
+  .ua{color:var(--dust);font-size:11.5px;word-break:break-all;margin-top:26px}
+  a{color:var(--warn)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Перевірка шрифтів</h1>
+  <p class="lede">Ця сторінка перевіряє, чи справді ваш браузер застосовує шрифти сайту.
+     Нічого натискати не треба — результат нижче.</p>
+
+  <div class="verdict" id="verdict"><b>Перевіряю…</b><span>Зачекайте секунду.</span></div>
+
+  <table>
+    <tr><th>Що перевірено</th><th>Результат</th></tr>
+    <tbody id="rows"></tbody>
+  </table>
+
+  <div class="sample">
+    <div class="lbl">Anton — так має виглядати таймер</div>
+    <div class="txt anton">02 : 21 : 47</div>
+  </div>
+  <div class="sample">
+    <div class="lbl">Impact — запасний варіант, якщо Anton не працює</div>
+    <div class="txt forced">02 : 21 : 47</div>
+  </div>
+  <div class="sample">
+    <div class="lbl">IBM Plex Sans — основний текст</div>
+    <div class="txt plex">Зона контролю · Відлік до виходу</div>
+  </div>
+
+  <p class="ua" id="ua"></p>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  var rows = document.getElementById("rows");
+  function row(label, value, cls) {
+    var tr = document.createElement("tr");
+    var th = document.createElement("td");
+    var td = document.createElement("td");
+    th.textContent = label;
+    td.textContent = value;
+    td.className = "v " + (cls || "");
+    tr.appendChild(th); tr.appendChild(td);
+    rows.appendChild(tr);
+  }
+
+  /* Measure a string in a candidate family against a deliberately different
+     one. If the widths match, the candidate never applied — this is the only
+     test that survives a browser lying about what it loaded. */
+  function widthIn(family) {
+    var cv = document.createElement("canvas").getContext("2d");
+    cv.font = '72px ' + family;
+    return Math.round(cv.measureText("0123456789 WARDOGS").width);
+  }
+
+  document.getElementById("ua").textContent = navigator.userAgent;
+
+  function finish() {
+    /* Measured HERE, not at script start: before document.fonts.ready the
+       webfont has not been applied yet and every width would match the
+       fallback, which would report a false failure. */
+    var wAnton    = widthIn('"Anton"');
+    var wImpact   = widthIn('Impact');
+    var wMono     = widthIn('monospace');
+    var antonReal = wAnton !== wImpact && wAnton !== wMono;
+
+    var checkOk = false, plexOk = false;
+    try {
+      checkOk = document.fonts.check('1em "Anton"');
+      plexOk  = document.fonts.check('1em "IBM Plex Sans"');
+    } catch (e) {}
+
+    var loaded = [];
+    try {
+      document.fonts.forEach(function (f) {
+        if (f.status === "loaded") loaded.push(f.family + " " + f.weight);
+      });
+    } catch (e) {}
+
+    row("Anton застосовується", antonReal ? "ТАК" : "НІ", antonReal ? "ok" : "bad");
+    row("document.fonts.check — Anton", checkOk ? "ТАК" : "НІ", checkOk ? "ok" : "bad");
+    row("document.fonts.check — IBM Plex Sans", plexOk ? "ТАК" : "НІ", plexOk ? "ok" : "bad");
+    row("Завантажено накреслень", String(loaded.length), loaded.length ? "ok" : "bad");
+    row("Ширина рядка в Anton", wAnton + " px");
+    row("Ширина того самого в Impact", wImpact + " px", wAnton === wImpact ? "bad" : "");
+    if (loaded.length) row("Список", loaded.join(", "));
+
+    var v = document.getElementById("verdict");
+    if (antonReal) {
+      v.className = "verdict ok";
+      v.innerHTML = "<b>Шрифти працюють</b><span>Браузер завантажив і застосував шрифти сайту. " +
+        "Якщо головна сторінка виглядає інакше — це її кеш, натисніть Ctrl+Shift+R на ній.</span>";
+    } else {
+      v.className = "verdict bad";
+      v.innerHTML = "<b>Браузер не застосовує шрифти сайту</b><span>Файли або не доходять, " +
+        "або заблоковані налаштуванням. Дивіться таблицю нижче — рядок про завантаження файлу " +
+        "показує, що саме сталося.</span>";
+    }
+  }
+
+  /* Can the font file itself even be fetched? Separates "blocked at the
+     network" from "fetched but not applied to text". */
+  fetch("fonts/anton-400-latin.woff2", { cache: "no-store" })
+    .then(function (r) {
+      return r.arrayBuffer().then(function (b) {
+        row("Файл шрифту завантажується", r.status + " · " + b.byteLength + " байт",
+            r.ok && b.byteLength > 1000 ? "ok" : "bad");
+      });
+    })
+    .catch(function (e) {
+      row("Файл шрифту завантажується", "ЗАБЛОКОВАНО (" + e.message + ")", "bad");
+    })
+    .then(function () {
+      return fetch("index.html", { cache: "no-store" }).then(function (r) { return r.text(); });
+    })
+    .then(function (html) {
+      var m = html.match(/name="build" content="([^"]+)"/);
+      row("Версія головної сторінки", m ? m[1] : "мітки немає — стара версія",
+          m ? "ok" : "warn");
+      row("Головна тягне Google Fonts", html.indexOf("fonts.googleapis") >= 0 ? "ТАК — стара версія" : "НІ",
+          html.indexOf("fonts.googleapis") >= 0 ? "bad" : "ok");
+    })
+    .catch(function () {})
+    .then(function () {
+      return document.fonts.ready.catch(function () {});
+    })
+    .then(finish, finish);
+})();
+</script>
+</body>
+</html>
