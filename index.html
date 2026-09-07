@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="description" content="Великий таймер зворотного відліку до виходу WARDOGS у Steam Early Access — 10 вересня 2026.">
 <meta name="theme-color" content="#0C0B0A">
-<meta name="build" content="2026-09-07e">
+<meta name="build" content="2026-09-07f">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="canonical" href="https://elgias.github.io/wardogs-countdown/">
 <meta property="og:type" content="website">
@@ -56,7 +56,8 @@ body{
   font-size:15px;
   line-height:1.5;
   overflow-x:hidden;
-  -webkit-font-smoothing:antialiased;
+  -webkit-font-smoothing:antialiased;      /* Chrome, and Safari */
+  -moz-osx-font-smoothing:grayscale;       /* Firefox, macOS only */
 }
 
 /* ---------- terrain ---------- */
@@ -77,7 +78,7 @@ body{
 .rail-v.l{left:13px}
 .rail-v.r{right:13px}
 .rail-v span{
-  writing-mode:vertical-rl;font-family:var(--mono);font-size:10px;letter-spacing:.28em;
+  writing-mode:vertical-rl;font-family:var(--mono);font-size:clamp(10px,.58vw,13px);letter-spacing:.26em;
   text-transform:uppercase;color:var(--dust);opacity:.45;white-space:nowrap;
 }
 .rail-v.r span{transform:rotate(180deg)}
@@ -85,6 +86,14 @@ body{
 /* ---------- shell ---------- */
 main{
   position:relative;z-index:4;
+  /* Windows Firefox has no font-smoothing switch: -webkit- is ignored and
+     -moz-osx- is macOS only, so light text on dark renders with subpixel AA
+     and the stems bloom. Firefox falls back to GRAYSCALE antialiasing for
+     text it composites on its own layer, and a sub-1 opacity forces exactly
+     that. .999 is visually nothing and buys the thin Chrome-like rendering.
+     main holds no fixed-position children, so the new stacking context is
+     harmless -- the canvas, frame and side rails are its siblings. */
+  opacity:.999;
   min-height:100vh;
   min-height:100svh;
   display:flex;flex-direction:column;
@@ -95,18 +104,18 @@ main{
 /* ---------- header ---------- */
 .top{
   display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:18px;
-  font-size:12.5px;letter-spacing:.01em;color:var(--dust);
+  font-size:clamp(13px,.72vw,16.5px);letter-spacing:0;color:var(--dust);
 }
 .top .mark{
-  font-family:var(--disp);font-size:24px;letter-spacing:.15em;color:var(--bone);
+  font-family:var(--disp);font-size:clamp(24px,1.4vw,34px);letter-spacing:.15em;color:var(--bone);
   line-height:1;padding-right:15px;border-right:1px solid var(--line);
 }
 .top .lft{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
-.top .mid{white-space:nowrap;font-size:11px;letter-spacing:.14em;text-transform:uppercase}
+.top .mid{white-space:nowrap;font-size:clamp(11.5px,.64vw,14.5px);letter-spacing:.11em;text-transform:uppercase}
 .top .rgt{display:flex;justify-content:flex-end;align-items:center;gap:8px;white-space:nowrap}
 .top .rgt b{
-  font-family:var(--mono);font-weight:500;font-size:13px;color:var(--bone);
-  font-variant-numeric:tabular-nums;letter-spacing:.01em;
+  font-family:var(--mono);font-weight:400;font-size:clamp(13px,.74vw,17px);color:var(--bone);
+  font-variant-numeric:tabular-nums;letter-spacing:0;
 }
 .top .rgt .div{width:1px;height:12px;background:var(--line);margin:0 8px}
 .live{display:inline-block;width:5px;height:5px;background:var(--f1);margin-right:8px;vertical-align:middle}
@@ -116,7 +125,8 @@ body.beat .live{animation:beat 1s ease-out}
 /* ---------- objective board ---------- */
 .zone{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:clamp(14px,2.2vh,26px)}
 .eyebrow{
-  margin:0;font-size:12.5px;font-weight:500;letter-spacing:.17em;text-transform:uppercase;color:var(--dust);
+  margin:0;font-size:clamp(12.5px,.78vw,17px);font-weight:400;letter-spacing:.15em;
+  text-transform:uppercase;color:var(--dust);
   display:flex;align-items:center;gap:15px;
 }
 .eyebrow::before,.eyebrow::after{content:"";width:clamp(18px,5vw,64px);height:1px;background:var(--line)}
@@ -138,17 +148,19 @@ body.impact .board{animation:impact .3s steps(4,end);border-color:var(--f1)}
 }
 .board-strip{
   display:flex;justify-content:space-between;align-items:center;gap:16px;
-  font-size:11.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--dust);
+  font-size:clamp(12px,.7vw,15.5px);letter-spacing:.11em;text-transform:uppercase;color:var(--dust);
 }
-.board-strip b{font-family:var(--mono);color:var(--f1);font-weight:500;letter-spacing:.05em}
+.board-strip b{font-family:var(--mono);color:var(--f1);font-weight:500;letter-spacing:.04em}
 .board-strip .status{display:flex;align-items:center;gap:9px}
-.board-strip .status::before{content:"";width:6px;height:6px;background:var(--f1);flex:none}
+.board-strip .status::before{content:"";width:7px;height:7px;background:var(--f1);flex:none}
 
 .clock{
   display:flex;align-items:flex-start;justify-content:center;
   gap:clamp(6px,.9vw,13px);
   font-family:var(--disp);
-  font-size:clamp(2.6rem,11.4vw,9.8rem);
+  /* Cap raised well above 9.8rem: on a wide monitor the old ceiling left the
+     board occupying a third of the screen with the countdown looking small. */
+  font-size:clamp(2.6rem,11.4vw,15rem);
   line-height:1;
   max-width:100%;
 }
@@ -167,7 +179,9 @@ body.impact .board{animation:impact .3s steps(4,end);border-color:var(--f1)}
 }
 .card::after{ /* screen texture */
   content:"";position:absolute;inset:0;z-index:2;pointer-events:none;
-  background:repeating-linear-gradient(180deg,rgba(237,232,218,.032) 0 1px,transparent 1px 3px);
+  /* Softer and wider than before: at a 3px period this shimmered on Firefox
+     and read as the digits being slightly out of focus. */
+  background:repeating-linear-gradient(180deg,rgba(237,232,218,.022) 0 1px,transparent 1px 5px);
 }
 .g{
   position:absolute;inset:0;z-index:1;display:flex;align-items:center;justify-content:center;
@@ -176,7 +190,7 @@ body.impact .board{animation:impact .3s steps(4,end);border-color:var(--f1)}
 .g.enter{transform:translateY(-102%);opacity:0}
 .g.out{transform:translateY(102%);opacity:0}
 .unit{
-  font-size:clamp(10px,.9vw,12.5px);font-weight:500;letter-spacing:.24em;
+  font-size:clamp(11px,.95vw,16px);font-weight:400;letter-spacing:.22em;
   color:var(--dust);text-transform:uppercase;
 }
 
@@ -187,11 +201,11 @@ body.beat .sep i{opacity:1}
 /* ---------- target + unlock toggle ---------- */
 .aim{
   margin:0;display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;
-  font-size:13px;letter-spacing:.01em;color:var(--dust);
+  font-size:clamp(13px,.8vw,17.5px);letter-spacing:0;color:var(--dust);
 }
-.aim b{font-family:var(--mono);color:var(--bone);font-weight:500;letter-spacing:.01em}
+.aim b{font-family:var(--mono);color:var(--bone);font-weight:400;letter-spacing:0}
 .aim .local{
-  font-family:var(--mono);font-size:12px;color:var(--dust);
+  font-family:var(--mono);font-size:clamp(12px,.74vw,16px);color:var(--dust);
   border-left:1px solid var(--line);padding-left:12px;
 }
 .aim .local:empty{display:none}
@@ -201,17 +215,17 @@ body.launched .launch-note{display:block}
 body.launched .aim{opacity:.45}
 
 /* ---------- deployment window ---------- */
-.cap{display:flex;flex-direction:column;gap:9px;font-size:11.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--dust)}
+.cap{display:flex;flex-direction:column;gap:9px;font-size:clamp(12px,.7vw,15.5px);letter-spacing:.11em;text-transform:uppercase;color:var(--dust)}
 .cap-head{display:flex;justify-content:space-between;gap:12px;align-items:baseline}
 .cap-head b{
-  font-family:var(--mono);font-size:12.5px;color:var(--bone);font-weight:500;
-  font-variant-numeric:tabular-nums;letter-spacing:.01em;
+  font-family:var(--mono);font-size:clamp(12.5px,.74vw,16px);color:var(--bone);font-weight:500;
+  font-variant-numeric:tabular-nums;letter-spacing:0;
 }
 .days{display:flex;gap:4px;align-items:stretch}
 .day{
-  position:relative;flex:1;height:30px;border:1px solid var(--line-soft);
-  display:flex;align-items:center;padding-left:9px;overflow:hidden;
-  font-family:var(--mono);font-size:11.5px;letter-spacing:.04em;color:var(--dust);
+  position:relative;flex:1;height:clamp(30px,2.2vw,44px);border:1px solid var(--line-soft);
+  display:flex;align-items:center;padding-left:10px;overflow:hidden;
+  font-family:var(--mono);font-size:clamp(11.5px,.7vw,15px);letter-spacing:.02em;color:var(--dust);
 }
 .day span{position:relative;z-index:2}
 .day .lvl{position:absolute;top:0;bottom:0;left:0;width:0;z-index:1;background:rgba(233,162,39,.13)}
@@ -222,11 +236,11 @@ body.launched .aim{opacity:.45}
 .day.obj{flex:0 0 clamp(52px,7vw,86px);border:1px dashed var(--f1);color:var(--f1);justify-content:center;padding:0}
 .cap-foot{
   display:flex;justify-content:space-between;gap:12px;
-  font-family:var(--sans);font-size:12px;letter-spacing:.01em;text-transform:none;
+  font-family:var(--sans);font-size:clamp(12px,.72vw,16px);letter-spacing:0;text-transform:none;
 }
 
 /* ---------- foot ---------- */
-.foot{display:flex;justify-content:space-between;gap:18px;flex-wrap:wrap;font-size:12px;letter-spacing:.01em;color:var(--dust)}
+.foot{display:flex;justify-content:space-between;gap:18px;flex-wrap:wrap;font-size:clamp(12px,.72vw,16px);letter-spacing:0;color:var(--dust)}
 .foot a{color:var(--dust);text-decoration:none;border-bottom:1px solid var(--line);padding-bottom:2px;margin-left:9px}
 .foot a:hover{color:var(--f1);border-color:var(--f1)}
 .foot a:focus-visible{outline:2px solid var(--f2);outline-offset:3px}
@@ -234,7 +248,7 @@ body.launched .aim{opacity:.45}
 /* Printed on the page, not fetched: a privacy browser can block a scripted
    fetch of the page's own HTML, so a stamp the reader can simply LOOK at is
    the only version check that always works. */
-.build{font-family:var(--mono);font-size:10.5px;letter-spacing:.04em;opacity:.5}
+.build{font-family:var(--mono);font-size:clamp(11px,.62vw,13.5px);letter-spacing:.02em;opacity:.5}
 
 body.critical{--f1:var(--f3)}
 
@@ -244,9 +258,9 @@ body.critical{--f1:var(--f3)}
   .top{grid-template-columns:1fr;justify-items:center;text-align:center;gap:12px}
   .top .rgt{justify-content:center}
   .top .mark{border-right:0;padding-right:0}
-  .day{padding-left:5px;font-size:10px;letter-spacing:0}
-  .eyebrow{font-size:11.5px;letter-spacing:.12em}
-  .cap-foot,.foot{font-size:11.5px}
+  .day{padding-left:5px;font-size:10.5px;letter-spacing:0}
+  .eyebrow{font-size:12px;letter-spacing:.11em}
+  .cap-foot,.foot{font-size:12px}
   .foot{justify-content:center;text-align:center}
 }
 @media (prefers-reduced-motion: reduce){
@@ -308,7 +322,7 @@ body.critical{--f1:var(--f3)}
 
   <footer class="foot">
     <span class="flag">Час розблокування може змінитися &mdash; звіряйтеся зі Steam</span>
-    <span class="build">версія 2026-09-07e</span>
+    <span class="build">версія 2026-09-07f</span>
     <span>Джерела:
       <a href="https://store.steampowered.com/app/1867240/WARDOGS/" target="_blank" rel="noopener noreferrer">Steam</a>
       <a href="https://game8.co/articles/release-dates/wardogs-release-date-and-time" target="_blank" rel="noopener noreferrer">Game8</a>
