@@ -39,7 +39,10 @@
   --f1:#E9A227;
   --f2:#6FA3B0;
   --f3:#B8503C;
-  --disp:"Anton","Arial Narrow",Impact,sans-serif;
+  /* Impact before Arial Narrow: if a browser blocks webfonts outright, Impact is
+     the closest heavy-condensed face already on Windows and macOS, so the board
+     still reads as a board. Arial Narrow is too light to stand in for Anton. */
+  --disp:"Anton",Impact,Haettenschweiler,"Franklin Gothic Bold","Arial Narrow",sans-serif;
   --mono:"IBM Plex Mono",ui-monospace,Consolas,"Courier New",monospace;
   --sans:"IBM Plex Sans","Segoe UI",system-ui,-apple-system,sans-serif;
 }
