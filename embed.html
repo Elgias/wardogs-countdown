@@ -1,0 +1,270 @@
+<!doctype html>
+<html lang="uk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<meta name="build" content="2026-09-08a">
+<meta name="description" content="Таймер до виходу WARDOGS у Steam Early Access — компактна версія для вбудовування.">
+<title>Wardogs — таймер</title>
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="fonts.css">
+
+<style>
+:root{
+  color-scheme: dark;
+  --ground:#0C0B0A;
+  --plate-hi:#1A1712;
+  --line:#332E25;
+  --line-soft:#221F19;
+  --bone:#EDE8DA;
+  --dust:#A29A88;
+  --f1:#E9A227;
+  --f3:#B8503C;
+  --disp:"Anton",Impact,Haettenschweiler,"Arial Narrow",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Consolas,"Courier New",monospace;
+  --sans:"IBM Plex Sans","Segoe UI",system-ui,-apple-system,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0;
+  background:var(--ground);
+  /* Faint survey grid instead of the full site's animated map: an embed is
+     small, and a moving canvas there is noise rather than atmosphere. */
+  background-image:radial-gradient(circle,rgba(237,232,218,.05) 1px,transparent 1px);
+  background-size:22px 22px;
+  color:var(--bone);
+  font-family:var(--sans);
+  display:flex;align-items:center;justify-content:center;
+  padding:min(4vh,16px) min(4vw,18px);
+  overflow:hidden;
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+  opacity:.999; /* forces grayscale antialiasing in Firefox — see index.html */
+}
+
+/* Every size is min() of a width unit AND a height unit, so the layout is
+   driven by whichever dimension is scarcer. An embed is usually short, and
+   sizing on width alone is what makes a countdown overflow its frame. */
+.wrap{width:100%;display:flex;flex-direction:column;gap:min(2.4vh,12px)}
+
+.head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;min-width:0}
+.mark{
+  font-family:var(--disp);font-size:min(5.4vw,9.5vh,32px);letter-spacing:.14em;
+  color:var(--bone);text-decoration:none;line-height:1;white-space:nowrap;
+}
+.mark:hover{color:var(--f1)}
+.mark:focus-visible{outline:2px solid var(--f1);outline-offset:3px}
+.sub{
+  font-size:min(2.7vw,4.6vh,13px);letter-spacing:.13em;text-transform:uppercase;
+  color:var(--dust);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+
+.clock{
+  display:flex;align-items:flex-start;justify-content:center;
+  gap:min(1.5vw,1.6vh,11px);
+  font-family:var(--disp);font-size:min(13vw,25vh,112px);line-height:1;
+}
+.grp{display:flex;flex-direction:column;align-items:center;gap:.17em}
+.digits{display:flex;gap:.05em}
+.card{
+  position:relative;display:block;width:.66em;height:1.08em;overflow:hidden;
+  border:1px solid #2C2720;
+  background:linear-gradient(180deg,var(--plate-hi) 0%,#100E0B 52%,#15120E 53%,#0D0B09 100%);
+  transition:border-color .35s ease;
+}
+.card.hit{border-color:var(--f1);transition:none}
+.card::before{
+  content:"";position:absolute;left:0;right:0;top:50%;height:1px;z-index:3;
+  background:rgba(0,0,0,.6);box-shadow:0 1px 0 rgba(237,232,218,.05);
+}
+.g{
+  position:absolute;inset:0;z-index:1;display:flex;align-items:center;justify-content:center;
+  transition:transform .4s cubic-bezier(.22,.9,.3,1),opacity .4s ease;
+}
+.g.enter{transform:translateY(-102%);opacity:0}
+.g.out{transform:translateY(102%);opacity:0}
+.unit{font-size:min(2.3vw,3.8vh,11.5px);letter-spacing:.2em;color:var(--dust);text-transform:uppercase}
+.sep{display:flex;flex-direction:column;justify-content:center;gap:.2em;height:1.08em;font-size:inherit}
+.sep i{width:.085em;height:.085em;background:var(--f1);opacity:.4;transition:opacity .4s ease}
+body.beat .sep i{opacity:1}
+
+/* One continuous bar, not the seven day-blocks of the full page: those need
+   room for a label per block and collapse into slivers in a narrow frame. */
+.bar{
+  position:relative;width:100%;height:min(1.7vh,7px);min-height:4px;
+  background:#17140F;border:1px solid var(--line-soft);overflow:hidden;
+}
+.fill{
+  position:absolute;left:0;top:0;bottom:0;width:0;
+  background:linear-gradient(90deg,rgba(233,162,39,.3),rgba(233,162,39,.85));
+  border-right:2px solid var(--f1);
+}
+.foot{
+  display:flex;align-items:baseline;justify-content:space-between;gap:10px;
+  font-size:min(2.5vw,4.2vh,12.5px);color:var(--dust);min-width:0;
+}
+.foot .tgt{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.foot b{font-family:var(--mono);font-weight:400;color:var(--bone)}
+.foot .pct{font-family:var(--mono);color:var(--f1);white-space:nowrap}
+
+body.critical{--f1:var(--f3)}
+body.launched .live-only{display:none}
+.done-note{
+  display:none;font-family:var(--mono);color:var(--f1);
+  font-size:min(3vw,5vh,15px);letter-spacing:.14em;text-transform:uppercase;text-align:center;
+}
+body.launched .done-note{display:block}
+
+/* Shed the optional rows as the frame gets shorter, in order of least value:
+   unit captions first, then the target line. The name, the count and the bar
+   are the three things an embed must never drop. */
+@media (max-height:170px){ .unit{display:none} .wrap{gap:min(1.8vh,9px)} }
+@media (max-height:132px){ .foot{display:none} }
+@media (max-height:104px){ .head .sub{display:none} }
+@media (max-width:330px){ .head .sub{display:none} }
+@media (prefers-reduced-motion: reduce){ .g{transition:none} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="head">
+    <a class="mark" href="https://elgias.github.io/wardogs-countdown/" target="_blank" rel="noopener">WARDOGS</a>
+    <span class="sub live-only">До виходу в ранній доступ</span>
+    <span class="sub" hidden id="doneSub">У ранньому доступі</span>
+  </div>
+
+  <div class="clock" role="timer">
+    <div class="grp"><div class="digits" id="dd"></div><span class="unit">днів</span></div>
+    <span class="sep"><i></i><i></i></span>
+    <div class="grp"><div class="digits" id="hh"></div><span class="unit">год</span></div>
+    <span class="sep"><i></i><i></i></span>
+    <div class="grp"><div class="digits" id="mm"></div><span class="unit">хв</span></div>
+    <span class="sep"><i></i><i></i></span>
+    <div class="grp"><div class="digits" id="ss"></div><span class="unit">сек</span></div>
+  </div>
+
+  <p class="done-note">Зону захоплено</p>
+
+  <div class="bar"><div class="fill" id="fill"></div></div>
+
+  <div class="foot">
+    <span class="tgt">Реліз <b>10 вересня 2026 · 17:00 UTC</b></span>
+    <span class="pct" id="pct">0.0%</span>
+  </div>
+</div>
+
+<script>
+(function () {
+  "use strict";
+  var REDUCED = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  /* Release: 10 September 2026, 17:00 UTC. Month is 0-based, so 8 = September. */
+  var TARGET = Date.UTC(2026, 8, 10, 17, 0, 0);
+  var WINDOW_START = Date.UTC(2026, 8, 3, 0, 0, 0);
+
+  function build(el, len) {
+    el.innerHTML = "";
+    for (var i = 0; i < len; i++) {
+      var card = document.createElement("span");
+      card.className = "card";
+      card.setAttribute("data-v", "");
+      var g = document.createElement("span");
+      g.className = "g";
+      g.textContent = "0";
+      card.appendChild(g);
+      el.appendChild(card);
+    }
+  }
+
+  function paint(el, str) {
+    var cards = el.children;
+    for (var i = 0; i < cards.length; i++) {
+      var card = cards[i];
+      var ch = str.charAt(i);
+      if (card.getAttribute("data-v") === ch) continue;
+      var first = card.getAttribute("data-v") === "";
+      card.setAttribute("data-v", ch);
+
+      if (first || REDUCED) {
+        card.querySelector(".g").textContent = ch;
+        continue;
+      }
+
+      var stale = card.querySelectorAll(".g.out");
+      for (var q = 0; q < stale.length; q++) stale[q].parentNode.removeChild(stale[q]);
+
+      var old = card.querySelector(".g");
+      var next = document.createElement("span");
+      next.className = "g enter";
+      next.textContent = ch;
+      card.appendChild(next);
+      void next.offsetWidth;
+      next.classList.remove("enter");
+
+      if (old) {
+        old.classList.add("out");
+        (function (node) {
+          setTimeout(function () { if (node.parentNode) node.parentNode.removeChild(node); }, 460);
+        })(old);
+      }
+
+      card.classList.add("hit");
+      (function (box) { setTimeout(function () { box.classList.remove("hit"); }, 120); })(card);
+    }
+  }
+
+  var dd = document.getElementById("dd");
+  var hh = document.getElementById("hh");
+  var mm = document.getElementById("mm");
+  var ss = document.getElementById("ss");
+  build(dd, 2); build(hh, 2); build(mm, 2); build(ss, 2);
+
+  var fill = document.getElementById("fill");
+  var pct = document.getElementById("pct");
+  var doneSub = document.getElementById("doneSub");
+
+  function pad(n, w) {
+    var s = String(Math.floor(n));
+    while (s.length < w) s = "0" + s;
+    return s;
+  }
+
+  var lastSec = null;
+
+  function render() {
+    var now = Date.now();
+    var left = TARGET - now;
+    var launched = left <= 0;
+    if (launched) left = 0;
+
+    var total = Math.floor(left / 1000);
+    if (total === lastSec) { requestAnimationFrame(render); return; }
+    lastSec = total;
+
+    paint(dd, pad(Math.min(Math.floor(total / 86400), 99), 2));
+    paint(hh, pad(Math.floor((total % 86400) / 3600), 2));
+    paint(mm, pad(Math.floor((total % 3600) / 60), 2));
+    paint(ss, pad(total % 60, 2));
+
+    document.body.classList.remove("beat");
+    void document.body.offsetWidth;
+    document.body.classList.add("beat");
+
+    document.body.classList.toggle("critical", !launched && total < 3600);
+    document.body.classList.toggle("launched", launched);
+    doneSub.hidden = !launched;
+
+    var p = Math.max(0, Math.min(1, (now - WINDOW_START) / (TARGET - WINDOW_START)));
+    fill.style.width = (p * 100).toFixed(2) + "%";
+    pct.textContent = (p * 100).toFixed(1) + "%";
+
+    requestAnimationFrame(render);
+  }
+
+  render();
+})();
+</script>
+</body>
+</html>
