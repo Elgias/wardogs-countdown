@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex">
-<meta name="build" content="2026-09-08a">
+<meta name="build" content="2026-09-08b">
 <meta name="description" content="Таймер до виходу WARDOGS у Steam Early Access — компактна версія для вбудовування.">
 <title>Wardogs — таймер</title>
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
@@ -47,7 +47,9 @@ body{
 /* Every size is min() of a width unit AND a height unit, so the layout is
    driven by whichever dimension is scarcer. An embed is usually short, and
    sizing on width alone is what makes a countdown overflow its frame. */
-.wrap{width:100%;display:flex;flex-direction:column;gap:min(2.4vh,12px)}
+/* clamp, not min: a bare min(2.4vh,…) collapses to under 3px in a 110px-tall
+   frame and the bar ends up touching the digits. The floor keeps them apart. */
+.wrap{width:100%;display:flex;flex-direction:column;gap:clamp(6px,2.4vh,12px)}
 
 .head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;min-width:0}
 .mark{
@@ -63,8 +65,11 @@ body{
 
 .clock{
   display:flex;align-items:flex-start;justify-content:center;
-  gap:min(1.5vw,1.6vh,11px);
-  font-family:var(--disp);font-size:min(13vw,25vh,112px);line-height:1;
+  gap:clamp(4px,min(1.5vw,2vh),11px);
+  /* 32vh, not 25: below ~170px tall the unit captions are already hidden, so
+     the digits may claim that freed height instead of leaving a wide, short
+     frame mostly empty. Width still wins whenever it is the scarcer axis. */
+  font-family:var(--disp);font-size:min(13vw,32vh,112px);line-height:1;
 }
 .grp{display:flex;flex-direction:column;align-items:center;gap:.17em}
 .digits{display:flex;gap:.05em}
@@ -120,7 +125,7 @@ body.launched .done-note{display:block}
 /* Shed the optional rows as the frame gets shorter, in order of least value:
    unit captions first, then the target line. The name, the count and the bar
    are the three things an embed must never drop. */
-@media (max-height:170px){ .unit{display:none} .wrap{gap:min(1.8vh,9px)} }
+@media (max-height:170px){ .unit{display:none} .wrap{gap:clamp(5px,1.8vh,9px)} }
 @media (max-height:132px){ .foot{display:none} }
 @media (max-height:104px){ .head .sub{display:none} }
 @media (max-width:330px){ .head .sub{display:none} }
