@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex">
-<meta name="build" content="2026-09-08b">
+<meta name="build" content="2026-09-10a">
 <meta name="description" content="Таймер до виходу WARDOGS у Steam Early Access — компактна версія для вбудовування.">
 <title>Wardogs — таймер</title>
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
@@ -155,7 +155,7 @@ body.launched .done-note{display:block}
   <div class="bar"><div class="fill" id="fill"></div></div>
 
   <div class="foot">
-    <span class="tgt">Реліз <b>10 вересня 2026 · 17:00 UTC</b></span>
+    <span class="tgt">Реліз <b>10 вересня 2026 · 16:00 UTC</b></span>
     <span class="pct" id="pct">0.0%</span>
   </div>
 </div>
@@ -165,8 +165,8 @@ body.launched .done-note{display:block}
   "use strict";
   var REDUCED = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-  /* Release: 10 September 2026, 17:00 UTC. Month is 0-based, so 8 = September. */
-  var TARGET = Date.UTC(2026, 8, 10, 17, 0, 0);
+  /* Release: 10 September 2026, 16:00 UTC. Month is 0-based, so 8 = September. */
+  var TARGET = Date.UTC(2026, 8, 10, 16, 0, 0);
   var WINDOW_START = Date.UTC(2026, 8, 3, 0, 0, 0);
 
   function build(el, len) {
