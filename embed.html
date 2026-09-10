@@ -4,12 +4,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex">
-<meta name="build" content="2026-09-10a">
+<meta name="build" content="2026-09-10b">
 <meta name="description" content="Таймер до виходу WARDOGS у Steam Early Access — компактна версія для вбудовування.">
 <title>Wardogs — таймер</title>
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="fonts.css">
-
 <style>
 :root{
   color-scheme: dark;
@@ -20,7 +19,9 @@
   --bone:#EDE8DA;
   --dust:#A29A88;
   --f1:#E9A227;
-  --f3:#B8503C;
+  --alert:#D9573B;
+  --go:#8BCB6B;
+  --go-ink:#0B120A;
   --disp:"Anton",Impact,Haettenschweiler,"Arial Narrow",sans-serif;
   --mono:"IBM Plex Mono",ui-monospace,Consolas,"Courier New",monospace;
   --sans:"IBM Plex Sans","Segoe UI",system-ui,-apple-system,sans-serif;
@@ -28,47 +29,39 @@
 *{box-sizing:border-box}
 html,body{height:100%}
 body{
-  margin:0;
-  background:var(--ground);
-  /* Faint survey grid instead of the full site's animated map: an embed is
-     small, and a moving canvas there is noise rather than atmosphere. */
-  background-image:radial-gradient(circle,rgba(237,232,218,.05) 1px,transparent 1px);
-  background-size:22px 22px;
-  color:var(--bone);
-  font-family:var(--sans);
+  margin:0;background:var(--ground);
+  background-image:radial-gradient(circle,rgba(237,232,218,.05) 1px,transparent 1px);background-size:22px 22px;
+  color:var(--bone);font-family:var(--sans);
   display:flex;align-items:center;justify-content:center;
-  padding:min(4vh,16px) min(4vw,18px);
-  overflow:hidden;
-  -webkit-font-smoothing:antialiased;
-  -moz-osx-font-smoothing:grayscale;
-  opacity:.999; /* forces grayscale antialiasing in Firefox — see index.html */
+  padding:min(4vh,16px) min(4vw,18px);overflow:hidden;
+  -webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;opacity:.999;
 }
+/* In a frame there is no room for a tape or a headline, so the STATE is
+   carried by things that cost no height: the frame edge, the bar, the colour. */
+body.s-hour{--f1:var(--alert);animation:framepulse 2.2s ease-in-out infinite}
+body.s-live{--f1:var(--go);box-shadow:inset 0 0 0 1px rgba(139,203,107,.55),inset 0 0 60px rgba(139,203,107,.09)}
 
-/* Every size is min() of a width unit AND a height unit, so the layout is
-   driven by whichever dimension is scarcer. An embed is usually short, and
-   sizing on width alone is what makes a countdown overflow its frame. */
-/* clamp, not min: a bare min(2.4vh,…) collapses to under 3px in a 110px-tall
-   frame and the bar ends up touching the digits. The floor keeps them apart. */
 .wrap{width:100%;display:flex;flex-direction:column;gap:clamp(6px,2.4vh,12px)}
-
 .head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;min-width:0}
 .mark{
   font-family:var(--disp);font-size:min(5.4vw,9.5vh,32px);letter-spacing:.14em;
   color:var(--bone);text-decoration:none;line-height:1;white-space:nowrap;
 }
 .mark:hover{color:var(--f1)}
-.mark:focus-visible{outline:2px solid var(--f1);outline-offset:3px}
 .sub{
   font-size:min(2.7vw,4.6vh,13px);letter-spacing:.13em;text-transform:uppercase;
   color:var(--dust);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.sub .s{display:none}
+body.s-hour .sub{color:var(--alert)}
+body.s-live .sub{
+  font-family:var(--disp);font-size:min(4.8vw,8.5vh,28px);letter-spacing:.07em;line-height:1;
+  color:var(--go);text-shadow:0 0 22px rgba(139,203,107,.35);
 }
 
 .clock{
   display:flex;align-items:flex-start;justify-content:center;
   gap:clamp(4px,min(1.5vw,2vh),11px);
-  /* 32vh, not 25: below ~170px tall the unit captions are already hidden, so
-     the digits may claim that freed height instead of leaving a wide, short
-     frame mostly empty. Width still wins whenever it is the scarcer axis. */
   font-family:var(--disp);font-size:min(13vw,32vh,112px);line-height:1;
 }
 .grp{display:flex;flex-direction:column;align-items:center;gap:.17em}
@@ -84,6 +77,8 @@ body{
   content:"";position:absolute;left:0;right:0;top:50%;height:1px;z-index:3;
   background:rgba(0,0,0,.6);box-shadow:0 1px 0 rgba(237,232,218,.05);
 }
+body.s-hour #mm .card,body.s-hour #ss .card{border-color:rgba(217,87,59,.5)}
+body.s-live .card{border-color:rgba(139,203,107,.32)}
 .g{
   position:absolute;inset:0;z-index:1;display:flex;align-items:center;justify-content:center;
   transition:transform .4s cubic-bezier(.22,.9,.3,1),opacity .4s ease;
@@ -95,8 +90,6 @@ body{
 .sep i{width:.085em;height:.085em;background:var(--f1);opacity:.4;transition:opacity .4s ease}
 body.beat .sep i{opacity:1}
 
-/* One continuous bar, not the seven day-blocks of the full page: those need
-   room for a label per block and collapse into slivers in a narrow frame. */
 .bar{
   position:relative;width:100%;height:min(1.7vh,7px);min-height:4px;
   background:#17140F;border:1px solid var(--line-soft);overflow:hidden;
@@ -106,6 +99,20 @@ body.beat .sep i{opacity:1}
   background:linear-gradient(90deg,rgba(233,162,39,.3),rgba(233,162,39,.85));
   border-right:2px solid var(--f1);
 }
+/* Extra air above the bar (and above the Steam button that replaces it after
+   release). The shared row gap is 2.4vh, which is only ~6px in a 200px frame,
+   so the bar sat on the unit captions. This margin scales with the frame too,
+   but has its own floor and ceiling. */
+.bar,.go-row{margin-top:clamp(6px,min(2.2vw,5vh),18px)}
+/* Hour: the bar itself turns into hazard tape — the tape of the full page, at 7px. */
+body.s-hour .bar{height:min(2.4vh,10px);min-height:6px;border-color:rgba(217,87,59,.55)}
+body.s-hour .fill{
+  background-image:linear-gradient(-45deg,var(--alert) 25%,#2A120C 25%,#2A120C 50%,var(--alert) 50%,var(--alert) 75%,#2A120C 75%);
+  background-size:14px 14px;animation:tape 1s linear infinite;
+}
+/* Live: a full bar says nothing any more, so its row goes to the call to action. */
+body.s-live .bar{display:none}
+
 .foot{
   display:flex;align-items:baseline;justify-content:space-between;gap:10px;
   font-size:min(2.5vw,4.2vh,12.5px);color:var(--dust);min-width:0;
@@ -113,31 +120,50 @@ body.beat .sep i{opacity:1}
 .foot .tgt{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .foot b{font-family:var(--mono);font-weight:400;color:var(--bone)}
 .foot .pct{font-family:var(--mono);color:var(--f1);white-space:nowrap}
+body.s-hour .foot .tgt{color:#E9A193}
+body.s-live .foot{display:none}
 
-body.critical{--f1:var(--f3)}
-body.launched .live-only{display:none}
-.done-note{
-  display:none;font-family:var(--mono);color:var(--f1);
-  font-size:min(3vw,5vh,15px);letter-spacing:.14em;text-transform:uppercase;text-align:center;
+.go-row{display:none;align-items:center;justify-content:space-between;gap:10px;min-width:0}
+body.s-live .go-row{display:flex}
+.cta{
+  display:inline-flex;align-items:center;gap:.5em;text-decoration:none;white-space:nowrap;
+  font-family:var(--disp);text-transform:uppercase;letter-spacing:.08em;line-height:1;
+  font-size:clamp(10px,min(3.2vw,6.5vh),17px);color:var(--go-ink);background:var(--go);padding:.55em 1em;
+  box-shadow:0 0 0 1px rgba(139,203,107,.5),0 8px 24px rgba(139,203,107,.18);
 }
-body.launched .done-note{display:block}
+.cta:hover{background:#A6DD89}
+.cta:focus-visible{outline:2px solid var(--bone);outline-offset:3px}
+.in-battle{font-family:var(--mono);font-size:min(2.5vw,4.2vh,12.5px);color:var(--dust);white-space:nowrap}
 
-/* Shed the optional rows as the frame gets shorter, in order of least value:
-   unit captions first, then the target line. The name, the count and the bar
-   are the three things an embed must never drop. */
+.flash{position:fixed;inset:0;z-index:5;pointer-events:none;opacity:0}
+body.enter.s-hour .flash{background:radial-gradient(circle at 50% 50%,rgba(217,87,59,.36),rgba(217,87,59,0) 70%);animation:flash 1s ease-out both}
+body.enter.s-live .flash{background:radial-gradient(circle at 50% 50%,rgba(139,203,107,.4),rgba(139,203,107,0) 70%);animation:flash 1.2s ease-out both}
+body.enter .wrap{animation:stamp .7s cubic-bezier(.2,.9,.25,1) both}
+
+@keyframes framepulse{
+  0%,100%{box-shadow:inset 0 0 0 1px rgba(217,87,59,.3)}
+  50%{box-shadow:inset 0 0 0 2px rgba(217,87,59,.85),inset 0 0 44px rgba(217,87,59,.14)}
+}
+@keyframes tape{to{background-position:14px 0}}
+@keyframes flash{0%{opacity:1}100%{opacity:0}}
+@keyframes stamp{0%{transform:scale(1.07);opacity:.15}100%{transform:scale(1);opacity:1}}
+
 @media (max-height:170px){ .unit{display:none} .wrap{gap:clamp(5px,1.8vh,9px)} }
 @media (max-height:132px){ .foot{display:none} }
-@media (max-height:104px){ .head .sub{display:none} }
-@media (max-width:330px){ .head .sub{display:none} }
-@media (prefers-reduced-motion: reduce){ .g{transition:none} }
+/* Small frames swap the long caption for its short form instead of dropping it,
+   so "Година Х" and "До бою" survive where the everyday caption would not. */
+@media (max-height:104px),(max-width:330px){ .sub .l{display:none} .sub .s{display:inline} }
+@media (max-width:330px){ .in-battle{display:none} }
+@media (prefers-reduced-motion: reduce){ .g{transition:none} body,body *{animation:none !important} }
 </style>
 </head>
 <body>
+
+<div class="flash" aria-hidden="true"></div>
 <div class="wrap">
   <div class="head">
     <a class="mark" href="https://elgias.github.io/wardogs-countdown/" target="_blank" rel="noopener">WARDOGS</a>
-    <span class="sub live-only">До виходу в ранній доступ</span>
-    <span class="sub" hidden id="doneSub">У ранньому доступі</span>
+    <span class="sub" id="sub"></span>
   </div>
 
   <div class="clock" role="timer">
@@ -150,13 +176,16 @@ body.launched .done-note{display:block}
     <div class="grp"><div class="digits" id="ss"></div><span class="unit">сек</span></div>
   </div>
 
-  <p class="done-note">Зону захоплено</p>
-
   <div class="bar"><div class="fill" id="fill"></div></div>
 
   <div class="foot">
-    <span class="tgt">Реліз <b>10 вересня 2026 · 16:00 UTC</b></span>
+    <span class="tgt" id="tgt"></span>
     <span class="pct" id="pct">0.0%</span>
+  </div>
+
+  <div class="go-row">
+    <a class="cta" href="https://store.steampowered.com/app/1867240/WARDOGS/" target="_blank" rel="noopener noreferrer">Грати в Steam <span>&rarr;</span></a>
+    <span class="in-battle">у бою вже</span>
   </div>
 </div>
 
@@ -164,10 +193,19 @@ body.launched .done-note{display:block}
 (function () {
   "use strict";
   var REDUCED = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-
-  /* Release: 10 September 2026, 16:00 UTC. Month is 0-based, so 8 = September. */
   var TARGET = Date.UTC(2026, 8, 10, 16, 0, 0);
   var WINDOW_START = Date.UTC(2026, 8, 3, 0, 0, 0);
+  var HOUR_S = 3600;
+
+  function now() { return Date.now(); }
+
+  var TEXT = {
+    normal: { l: "До виходу в ранній доступ",   s: "",         tgt: "Реліз <b>10 вересня 2026 · 16:00 UTC</b>" },
+    hour:   { l: "Година Х · готуйтеся до бою", s: "Година Х", tgt: "Реліз о <b>16:00 UTC</b> · менше години" },
+    live:   { l: "До бою",                      s: "До бою",   tgt: "" }
+  };
+
+  function $(id) { return document.getElementById(id); }
 
   function build(el, len) {
     el.innerHTML = "";
@@ -182,7 +220,6 @@ body.launched .done-note{display:block}
       el.appendChild(card);
     }
   }
-
   function paint(el, str) {
     var cards = el.children;
     for (var i = 0; i < cards.length; i++) {
@@ -191,15 +228,9 @@ body.launched .done-note{display:block}
       if (card.getAttribute("data-v") === ch) continue;
       var first = card.getAttribute("data-v") === "";
       card.setAttribute("data-v", ch);
-
-      if (first || REDUCED) {
-        card.querySelector(".g").textContent = ch;
-        continue;
-      }
-
+      if (first || REDUCED) { card.querySelector(".g").textContent = ch; continue; }
       var stale = card.querySelectorAll(".g.out");
       for (var q = 0; q < stale.length; q++) stale[q].parentNode.removeChild(stale[q]);
-
       var old = card.querySelector(".g");
       var next = document.createElement("span");
       next.className = "g enter";
@@ -207,46 +238,48 @@ body.launched .done-note{display:block}
       card.appendChild(next);
       void next.offsetWidth;
       next.classList.remove("enter");
-
       if (old) {
         old.classList.add("out");
-        (function (node) {
-          setTimeout(function () { if (node.parentNode) node.parentNode.removeChild(node); }, 460);
-        })(old);
+        (function (node) { setTimeout(function () { if (node.parentNode) node.parentNode.removeChild(node); }, 460); })(old);
       }
-
       card.classList.add("hit");
       (function (box) { setTimeout(function () { box.classList.remove("hit"); }, 120); })(card);
     }
   }
 
-  var dd = document.getElementById("dd");
-  var hh = document.getElementById("hh");
-  var mm = document.getElementById("mm");
-  var ss = document.getElementById("ss");
+  var dd = $("dd"), hh = $("hh"), mm = $("mm"), ss = $("ss");
   build(dd, 2); build(hh, 2); build(mm, 2); build(ss, 2);
 
-  var fill = document.getElementById("fill");
-  var pct = document.getElementById("pct");
-  var doneSub = document.getElementById("doneSub");
+  function pad(n, w) { var s = String(Math.floor(n)); while (s.length < w) s = "0" + s; return s; }
 
-  function pad(n, w) {
-    var s = String(Math.floor(n));
-    while (s.length < w) s = "0" + s;
-    return s;
+  var lastKey = null, lastState = null;
+
+  function applyState(state) {
+    if (state === lastState) return;
+    var T = TEXT[state];
+    document.body.classList.remove("s-normal", "s-hour", "s-live");
+    document.body.classList.add("s-" + state);
+    $("sub").innerHTML = '<span class="l">' + T.l + '</span><span class="s">' + T.s + '</span>';
+    $("tgt").innerHTML = T.tgt;
+    if (state !== "normal" && !REDUCED) {
+      document.body.classList.remove("enter");
+      void document.body.offsetWidth;
+      document.body.classList.add("enter");
+      setTimeout(function () { document.body.classList.remove("enter"); }, 1300);
+    }
+    lastState = state;
   }
 
-  var lastSec = null;
-
   function render() {
-    var now = Date.now();
-    var left = TARGET - now;
-    var launched = left <= 0;
-    if (launched) left = 0;
+    var t = now();
+    var diff = TARGET - t;
+    var launched = diff <= 0;
+    var total = launched ? Math.floor((t - TARGET) / 1000) : Math.floor(diff / 1000);
+    var key = (launched ? "L" : "C") + total;
+    if (key === lastKey) { requestAnimationFrame(render); return; }
+    lastKey = key;
 
-    var total = Math.floor(left / 1000);
-    if (total === lastSec) { requestAnimationFrame(render); return; }
-    lastSec = total;
+    applyState(launched ? "live" : (total <= HOUR_S ? "hour" : "normal"));
 
     paint(dd, pad(Math.min(Math.floor(total / 86400), 99), 2));
     paint(hh, pad(Math.floor((total % 86400) / 3600), 2));
@@ -257,17 +290,11 @@ body.launched .done-note{display:block}
     void document.body.offsetWidth;
     document.body.classList.add("beat");
 
-    document.body.classList.toggle("critical", !launched && total < 3600);
-    document.body.classList.toggle("launched", launched);
-    doneSub.hidden = !launched;
-
-    var p = Math.max(0, Math.min(1, (now - WINDOW_START) / (TARGET - WINDOW_START)));
-    fill.style.width = (p * 100).toFixed(2) + "%";
-    pct.textContent = (p * 100).toFixed(1) + "%";
-
+    var p = Math.max(0, Math.min(1, (t - WINDOW_START) / (TARGET - WINDOW_START)));
+    $("fill").style.width = (p * 100).toFixed(2) + "%";
+    $("pct").textContent = (p * 100).toFixed(1) + "%";
     requestAnimationFrame(render);
   }
-
   render();
 })();
 </script>
